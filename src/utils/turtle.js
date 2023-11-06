@@ -59,6 +59,7 @@ export class Turtle {
   constructor() {
     this.lights = [];
     this.group = new THREE.Group();
+    this.anchor = this.group; // For naming purposes
     this.materials = [];
     this.geometries = [];
 
