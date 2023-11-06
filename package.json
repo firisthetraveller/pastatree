@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@mdi/font": "5.9.55",
+    "dat.gui": "^0.7.9",
     "mathjs": "^10.6.0",
     "nearley": "^2.20.1",
     "postprocessing": "^6.26.4",

@@ -1,5 +1,10 @@
+// Source :
+// https://github.com/gerizim16/3d-l-system-generator
+// Slightly modified for external use
+
 import * as THREE from "three";
 import { Vector3 } from "three";
+import { iterate } from "./lsystem.js";
 
 function assignExisting(target, source) {
   Object.keys(source)
@@ -13,7 +18,32 @@ const defaults = Object.freeze({
   radius: 0.05,
   size: 0.3,
 });
-export default class Turtle {
+
+/**
+   * 
+   * @param {number} iterations 
+   * @param {THREE.Camera} camera 
+   * @param {THREE.OrbitControls} controls 
+   * @returns 
+   */
+export function Sakura(iterations, camera, controls) {
+  let data = {
+    axiom: "m{0x594d30, 0.9, 0} A{0.2}",
+    productions:
+      "A{r} -> l{0.2, r, r} +x +y +z [ [ A{r/2} ] -x A{r/2} ] -x -y -z l{0.2, r, r} [ -x l{0.2, r, r/2} A{r/2} m{0xf695c3, 0.7, 0} sphere ] +x A{r/2}\nl{a, b, c} -> l{a*2.5, b, c}\nl{a, b, c} -> l{a*2, b, c}\nsphere -> sphere{random()/7+0.1}",
+  };
+
+  let turtle = new Turtle();
+  turtle.generate(
+    iterate(data.axiom, data.productions, iterations),
+    camera,
+    controls
+  );
+
+  return turtle;
+}
+
+export class Turtle {
   scene;
   lights;
   material;
@@ -26,9 +56,7 @@ export default class Turtle {
 
   static defaults = defaults;
 
-  constructor(scene) {
-    this.scene = scene;
-
+  constructor() {
     this.lights = [];
     this.group = new THREE.Group();
     this.materials = [];
@@ -52,25 +80,21 @@ export default class Turtle {
   reset() {
     this.object = new THREE.Object3D();
     this.object.lookAt(new THREE.Vector3(0, 1, 0));
-    // this.getPos() = new THREE.Vector3();
-    // this.getDir() = new THREE.Vector3(0, 1, 0);
     this.tension = 0.5;
     this.radius = this.defaults.radius;
     this.stack = [];
     this.currentCurve = [];
 
-    this.scene.remove(this.group);
     this.lights.forEach((element) => element.dispose());
     this.materials.forEach((element) => element.dispose());
     this.geometries.forEach((element) => element.dispose());
 
     this.lights = [];
-    this.group = new THREE.Group();
+    this.group.children = [];
     this.materials = [];
     this.geometries = [];
 
     this.resetMaterial();
-    this.scene.add(this.group);
     return this;
   }
 
@@ -367,5 +391,24 @@ export default class Turtle {
       default:
         break;
     }
+  }
+
+  generate(commands, camera, controls) {
+    this.setDefaults(Turtle.defaults);
+
+    this.reset();
+    for (const command of commands) {
+      this.do(command);
+    }
+    this.group.rotation.y = THREE.MathUtils.degToRad(0);
+
+    // bounding box
+    const aabb = new THREE.Box3().setFromObject(this.group);
+    const target = new THREE.Vector3();
+    aabb.getCenter(target);
+    target.setX(0);
+    camera.position.set(0, target.y, -15);
+    controls.target.copy(target);
+    controls.update();
   }
 }
